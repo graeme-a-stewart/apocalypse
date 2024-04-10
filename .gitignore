@@ -25,3 +25,6 @@ Manifest.toml
 
 # Editor files
 .vscode/*
+
+# Plots files are not stored in git
+plots/*

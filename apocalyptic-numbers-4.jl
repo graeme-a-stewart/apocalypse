@@ -8,48 +8,52 @@ using InteractiveUtils
 using Plots
 
 # ╔═╡ fddfd970-f673-11ee-1981-0dd02488cbf0
-md"# Apocalyptic Numbers
+md"# Apocalyptic Numbers (4 sequence)
 
-Search for apocalyptic numbers, which are powers of 2, where the decimal representation of the number contains three consecutive 6s, i.e., $666$
+Search for apocalyptic numbers, which are powers of 2, where the decimal representation of the number contains *four* consecutive 6s, i.e., $6666$
 
 [Numberphile Video](https://youtu.be/0LkBwCSMsX4?si=3SzF4NogSxxoOYSZ)"
 
 # ╔═╡ 8008e8c5-1c17-40da-89dd-b785899a48be
 """Determine if a number has a given sequence"""
-function apocalypse(n::Number, seq = "666")
+function apocalypse(n::Number, seq = "6666")
     # This uses strings, which is probably not that fast
     decimal_n = string(n)
     return occursin(seq, decimal_n)
 end
 
 # ╔═╡ 3e597e1b-1952-42d9-b877-2290edc64e9c
-# Start with the lowest n where the decimal result is 3 digits long
-start_n = 7
+# Start with the lowest n where the decimal result is 4 digits long
+start_n = 11
 
 # ╔═╡ 2c6efd4c-3ac3-40a3-82d3-614cc283208f
 # As large as we want to go...
-# N.B. Above 29784 all numbers seem to be apocalypse numbers as there are so many digits
-# This is a conjecuture, not proven (see video at 10:00)
-final_n = 30000
-
-# ╔═╡ d82a5d4c-90b9-474e-8909-26d339e91d21
-apocalypse_powers = Int[]
+# If the pattern of "666" is followed then there may be an n that for
+# all N > n, the pattern is always fulfilled
+# 
+# This seems to be 296731 as the last non-apocalyptic 4-sequence
+# (At least the next 10k numbers match)
+#
+final_n = 296731
 
 # ╔═╡ 834ca038-af27-4599-ba55-1f45a5456f5c
 i = big"2"^(start_n-1)
 
 # ╔═╡ 4c1fdc48-a489-4253-ac22-f0bba7b79065
-for n in start_n:final_n
-    i *= 2
-    if apocalypse(i)
-        println("2^$n is an apocalypse number")
-        push!(apocalypse_powers, n)
-    end
+begin
+	apocalypse_powers = Int[]
+	for n in start_n:final_n
+	    i *= 2
+	    if apocalypse(i)
+	        println("2^$n is an apocalypse number")
+	        push!(apocalypse_powers, n)
+	    end
+	end
 end
 
 # ╔═╡ 55c3e9bb-9d11-41b4-8fad-2f92e8924dbf
 begin
-	bin_width = 500
+	bin_width = 1000
 	n_bins = ceil(Int, final_n/bin_width)
 end
 
@@ -1130,7 +1134,6 @@ version = "1.4.1+1"
 # ╠═8008e8c5-1c17-40da-89dd-b785899a48be
 # ╠═3e597e1b-1952-42d9-b877-2290edc64e9c
 # ╠═2c6efd4c-3ac3-40a3-82d3-614cc283208f
-# ╠═d82a5d4c-90b9-474e-8909-26d339e91d21
 # ╠═834ca038-af27-4599-ba55-1f45a5456f5c
 # ╠═4c1fdc48-a489-4253-ac22-f0bba7b79065
 # ╠═55c3e9bb-9d11-41b4-8fad-2f92e8924dbf
