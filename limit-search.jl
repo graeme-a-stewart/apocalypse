@@ -19,8 +19,13 @@ function search_limit(;stop = 10000, start = 1, base = 10, sequence = "666")
     n = start
     i = big"2"^n
     apocalypse_count = 0
+    n_non_apocalypse = 0
     last_non_apocalypse = n
     while (apocalypse_count < stop)
+        if rem(n, 1000) == 0
+            @info "Reached $n - $n_non_apocalypse in last chunk"
+            n_non_apocalypse = 0
+        end
         digit_string = string(i)
         if occursin(sequence, digit_string)
             apocalypse_count += 1
@@ -30,6 +35,7 @@ function search_limit(;stop = 10000, start = 1, base = 10, sequence = "666")
             @debug "$n is not apocalypse ($apocalypse_count consecutive)"
             apocalypse_count = 0
             last_non_apocalypse = n
+            n_non_apocalypse += 1
         end
         n += 1
         i *= 2

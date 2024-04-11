@@ -31,10 +31,10 @@ start_n = 11
 # If the pattern of "666" is followed then there may be an n that for
 # all N > n, the pattern is always fulfilled
 # 
-# This seems to be 296731 as the last non-apocalyptic 4-sequence
-# (At least the next 10k numbers match)
+# This seems to be 347991 as the last non-apocalyptic 4-sequence
+# (At least the next 50k numbers match)
 #
-final_n = 296731
+final_n = 347991
 
 # ╔═╡ 834ca038-af27-4599-ba55-1f45a5456f5c
 i = big"2"^(start_n-1)
@@ -53,7 +53,7 @@ end
 
 # ╔═╡ 55c3e9bb-9d11-41b4-8fad-2f92e8924dbf
 begin
-	bin_width = 1000
+	bin_width = 10000
 	n_bins = ceil(Int, final_n/bin_width)
 end
 
