@@ -4,132 +4,119 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 3eab63ff-b62d-45dd-a709-24f144566a5d
+# ╔═╡ 18bb3c2b-ea25-4e35-b48d-e1372303b76e
 using Plots
 
-# ╔═╡ 430f6484-8664-4191-9517-01d7250f8c66
-using Combinatorics
+# ╔═╡ 7e3fb6ad-fcde-4c10-a45f-43191a120ed7
+using OffsetArrays
 
-# ╔═╡ c0b17cbc-f7e6-11ee-0d1c-6b56c31392a6
-md"# Differential distribution
+# ╔═╡ 61a283f7-375b-4094-b3c8-e4acf5b2f4c3
+using Printf
 
-Plot the differential between two sequences, which is interesting when one of them is an XXX sequence, which we know has less apocalyptic hits
-"
+# ╔═╡ 3d3bf99c-f682-11ee-1a99-df32aecb81c0
+md"""# Flexible Apocalyptic Numbers (arbitrary base)
 
-# ╔═╡ 4c9bd66d-defb-48b0-bb33-09e969991f60
-# Define range of 2^n to search
-#
-# Here starting from 1 makes sense, because then the position in the array
-# is also the corresponding value of n
+Search for powers of 2, where the "base" representation of the number contains some sequence of three given digits. Classic apocalyptic numbers would have three consecutive 6s, i.e., $666$, but there's nothing very special about that sequence of digits, so we search here all valid n-digit combinations for the given base.
+
+Main question is if matches for XXX (i.e., the same digit, repeated) are also less frequent in other bases than 10.
+
+[Numberphile Video on Apocalyptic Numbers](https://youtu.be/0LkBwCSMsX4?si=3SzF4NogSxxoOYSZ)"""
+
+# ╔═╡ bf7b118f-f21b-4c7f-9088-fcc29971cf90
+md"## Core parameters"
+
+# ╔═╡ 507073e1-07bc-468a-bcbe-4ba3f1a992f7
+begin
+	base = 5
+	seq_length = 3
+end
+
+# ╔═╡ e32bfd06-5dfb-4b0e-99cd-689e6a993cda
+# Now calculate all valid sequence matches for this base
+seq_matches = [Base.GMP.string(BigInt(i-1), base=base, pad=seq_length) 
+	for i in 1:base^seq_length]
+
+# ╔═╡ 9b254574-442c-4bb2-b404-08552b6d0f7c
+# Start and stop n
 begin
 	start_n = 1
-	final_n = 30_000
+	finish_n = 10_000
 end
 
-# ╔═╡ 8baa4d3b-4f71-465e-b08b-ae7ade7a8976
-# Define target sequences that we produce distributions for
-targets = ["666", "123", "333", "159"]
+# ╔═╡ b88ec48b-4660-42cc-80d8-3374ec8db5c9
+md"Now calculate the string squences of $2^n$, over the valid range and in the desired base"
 
-# ╔═╡ 83024af9-1152-4234-96a6-fb3a326edb9b
+# ╔═╡ 585755a4-1634-4302-a561-dfc52f3e1f82
 begin
-	cummulative_apocalypse = similar(targets, Vector{Int})
-	n = start_n
-	i = big"2"^n
-	s = string(i)
-	for ind in eachindex(cummulative_apocalypse)
-		cummulative_apocalypse[ind] = Int[]
-		sizehint!(cummulative_apocalypse[ind], final_n)
-		if occursin(targets[ind], s)
-			push!(cummulative_apocalypse[ind], 1)
-		else
-			push!(cummulative_apocalypse[ind], 0)
-		end
-	end
-	for n in start_n-1:final_n
+	string_sequence=String[]
+	sizehint!(string_sequence, finish_n)
+	i = BigInt(2^start_n)
+	push!(string_sequence, Base.GMP.string(i, base=base))
+	for n in start_n+1:finish_n
 		i *= 2
-		s = string(i)
-		for ind in eachindex(cummulative_apocalypse)
-			if occursin(targets[ind], s)
-				push!(cummulative_apocalypse[ind], 		1+last(cummulative_apocalypse[ind]))
-			else
-				push!(cummulative_apocalypse[ind], last(cummulative_apocalypse[ind]))
-			end
-		end
+		push!(string_sequence, Base.GMP.string(i, base=base))
 	end
 end
 
-# ╔═╡ ea73bf2d-1cde-4735-82d3-c57d8536d21f
-cummulative_apocalypse[1]
+# ╔═╡ 2eabe61a-b5c9-4699-b04f-d1e8914c333b
+# ╠═╡ disabled = true
+#=╠═╡
+string_sequence
+  ╠═╡ =#
 
-# ╔═╡ 4a38608c-e419-4d33-98a9-2794775de213
+# ╔═╡ 814e6c72-5169-4fbe-a37b-5b0f0caacc09
+md"Now count the number of 'apocalyptic' matches for each 3 digit sequence"
+
+# ╔═╡ 99267830-873e-4c8e-8291-6f8fb5ef3b5a
 begin
-	for ind in eachindex(cummulative_apocalypse)
-		if ind == 1
-			plot(cummulative_apocalypse[ind], label="A($(targets[ind]))", ylabel="A(n)", xlabel="n")
-		else
-			plot!(cummulative_apocalypse[ind], label="A($(targets[ind]))")
+	n_apocalypse = zeros(Int, length(seq_matches))
+	for (seq_n, seq) in enumerate(seq_matches)
+		for power_string in string_sequence
+			occursin(seq, power_string) && (n_apocalypse[seq_n] += 1)
 		end
 	end
-	# Display the "current" plot
-	current()
 end
+	
 
-# ╔═╡ 3acce2ae-4bdd-4517-a2fb-c39d9838c9ef
-simple_diff = cummulative_apocalypse[2] .- cummulative_apocalypse[1]
+# ╔═╡ 7fb5c685-ee58-426b-9a6e-68ff160d5f63
+n_apocalypse
 
-# ╔═╡ a4c81820-a906-498a-86f8-74514733a54e
-plot(simple_diff, ylabel="A($(targets[2]))-A($(targets[1]))", xlabel="n", title="Differential of total apocalypse numbers")
-
-# ╔═╡ 5addd81e-05ae-41e0-92d8-f800fed8e805
-comb = collect(combinations(eachindex(targets), 2))
-
-# ╔═╡ 61816eb5-e0cd-4915-bd29-3ab5e87d233a
-"""
-Return the plot of A(i)-A(j)
-"""
-function diff_plot(targets, cummulative_apocalypse, i, j; normalise=true)
-	if normalise
-		# Normalise so that the final difference is positive
-		if last(cummulative_apocalypse[j]) > last(cummulative_apocalypse[i])
-			j, i = i, j
-		end
-	end
-	plot(cummulative_apocalypse[i] .- cummulative_apocalypse[j],
-		ylabel="A($(targets[i]))-A($(targets[j]))", xlabel="n", 
-		title="",
-		label=""
-	)
-end
-
-# ╔═╡ a056a9e8-73d7-41e9-b1fb-b1df82b62e3b
-diff_plot(targets, cummulative_apocalypse, 1, 2)
-
-# ╔═╡ 0a725e6a-3bf9-4a50-8e98-a2fa6a9cfff5
-# Make a big plot with every combination
+# ╔═╡ 67e9efc1-0460-46eb-8d19-9fb527edde94
+# Calculate reasonable values for the x-ticks, which are the XXX
+# matches - there should be "base" of these, spread between 1 and length(seq_matches)
 begin
-	diff_plots = []
-	for c in comb
-		push!(diff_plots, diff_plot(targets, cummulative_apocalypse, c[1], c[2]))
-		last(diff_plots)
+	xticks_n = Int.(collect(range(1, length(seq_matches), base)))
+	xlabels = [seq_matches[i] for i in xticks_n]
+end
+
+
+
+# ╔═╡ 28b29acb-9a48-473b-95b3-438814cf63d2
+plot(1:length(seq_matches), n_apocalypse, 
+	xlabel="Sequence of $(seq_length) digits", 
+	ylabel="Number of 'apocalypse' matches", 
+	title="Apocalyptic Matches for Base $base",
+	label="", xticks=(xticks_n, xlabels))
+
+# ╔═╡ b2560af5-c899-4dac-a7ee-34719532394d
+for (seq_n, seq) in enumerate(seq_matches)
+	if n_apocalypse[seq_n] < 9665
+		println("$seq: $(n_apocalypse[seq_n])")
 	end
 end
 
-# ╔═╡ 5c5438f3-0ad1-40ff-ac6e-6bff72ccb49c
-# plot_title is weirdly broken - takes up half the plot!
-# plot(diff_plots..., plot_title="Differentials of Cummulative Apocalypses")
-plot(diff_plots...)
-
-# ╔═╡ 0a35895f-b507-4571-8cb4-b9cc5efaa9ad
-savefig("plots/differentials.png")
+# ╔═╡ 659f1c63-c607-4de3-a78f-a8e53b0b3002
+histogram(n_apocalypse, xlabel="Number of 'apocalypse' matches", ylabel="Frequency", label="")
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
-Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
+OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [compat]
-Combinatorics = "~1.0.2"
+OffsetArrays = "~1.13.0"
 Plots = "~1.40.3"
 """
 
@@ -139,7 +126,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.10.2"
 manifest_format = "2.0"
-project_hash = "147a988036caabec3a2be8ec8667a1aa35eca33d"
+project_hash = "47019b50975aee67a92001585e8db43fd5486c0f"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -203,11 +190,6 @@ deps = ["ColorTypes", "FixedPointNumbers", "Reexport"]
 git-tree-sha1 = "fc08e5930ee9a4e03f84bfb5211cb54e7769758a"
 uuid = "5ae59095-9a9b-59fe-a467-6f913c188581"
 version = "0.12.10"
-
-[[deps.Combinatorics]]
-git-tree-sha1 = "08c8b6831dc00bfea825826be0bc8336fc369860"
-uuid = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
-version = "1.0.2"
 
 [[deps.Compat]]
 deps = ["TOML", "UUIDs"]
@@ -610,6 +592,17 @@ version = "1.0.2"
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
 version = "1.2.0"
+
+[[deps.OffsetArrays]]
+git-tree-sha1 = "6a731f2b5c03157418a20c12195eb4b74c8f8621"
+uuid = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
+version = "1.13.0"
+
+    [deps.OffsetArrays.extensions]
+    OffsetArraysAdaptExt = "Adapt"
+
+    [deps.OffsetArrays.weakdeps]
+    Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 
 [[deps.Ogg_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1192,21 +1185,23 @@ version = "1.4.1+1"
 """
 
 # ╔═╡ Cell order:
-# ╟─c0b17cbc-f7e6-11ee-0d1c-6b56c31392a6
-# ╠═3eab63ff-b62d-45dd-a709-24f144566a5d
-# ╠═430f6484-8664-4191-9517-01d7250f8c66
-# ╠═4c9bd66d-defb-48b0-bb33-09e969991f60
-# ╠═8baa4d3b-4f71-465e-b08b-ae7ade7a8976
-# ╠═83024af9-1152-4234-96a6-fb3a326edb9b
-# ╠═ea73bf2d-1cde-4735-82d3-c57d8536d21f
-# ╠═4a38608c-e419-4d33-98a9-2794775de213
-# ╠═3acce2ae-4bdd-4517-a2fb-c39d9838c9ef
-# ╠═a4c81820-a906-498a-86f8-74514733a54e
-# ╠═5addd81e-05ae-41e0-92d8-f800fed8e805
-# ╠═61816eb5-e0cd-4915-bd29-3ab5e87d233a
-# ╠═a056a9e8-73d7-41e9-b1fb-b1df82b62e3b
-# ╠═0a725e6a-3bf9-4a50-8e98-a2fa6a9cfff5
-# ╠═5c5438f3-0ad1-40ff-ac6e-6bff72ccb49c
-# ╠═0a35895f-b507-4571-8cb4-b9cc5efaa9ad
+# ╟─3d3bf99c-f682-11ee-1a99-df32aecb81c0
+# ╠═18bb3c2b-ea25-4e35-b48d-e1372303b76e
+# ╠═7e3fb6ad-fcde-4c10-a45f-43191a120ed7
+# ╠═61a283f7-375b-4094-b3c8-e4acf5b2f4c3
+# ╟─bf7b118f-f21b-4c7f-9088-fcc29971cf90
+# ╠═507073e1-07bc-468a-bcbe-4ba3f1a992f7
+# ╠═e32bfd06-5dfb-4b0e-99cd-689e6a993cda
+# ╠═9b254574-442c-4bb2-b404-08552b6d0f7c
+# ╟─b88ec48b-4660-42cc-80d8-3374ec8db5c9
+# ╠═585755a4-1634-4302-a561-dfc52f3e1f82
+# ╠═2eabe61a-b5c9-4699-b04f-d1e8914c333b
+# ╟─814e6c72-5169-4fbe-a37b-5b0f0caacc09
+# ╠═99267830-873e-4c8e-8291-6f8fb5ef3b5a
+# ╠═7fb5c685-ee58-426b-9a6e-68ff160d5f63
+# ╠═67e9efc1-0460-46eb-8d19-9fb527edde94
+# ╠═28b29acb-9a48-473b-95b3-438814cf63d2
+# ╠═b2560af5-c899-4dac-a7ee-34719532394d
+# ╠═659f1c63-c607-4de3-a78f-a8e53b0b3002
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
