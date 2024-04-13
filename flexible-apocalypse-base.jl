@@ -7,11 +7,11 @@ using InteractiveUtils
 # ╔═╡ 18bb3c2b-ea25-4e35-b48d-e1372303b76e
 using Plots
 
-# ╔═╡ 7e3fb6ad-fcde-4c10-a45f-43191a120ed7
-using OffsetArrays
+# ╔═╡ 4df705e4-af59-48a1-a91a-afe02aa542e8
+using Statistics
 
 # ╔═╡ 61a283f7-375b-4094-b3c8-e4acf5b2f4c3
-using Printf
+using LaTeXStrings
 
 # ╔═╡ 3d3bf99c-f682-11ee-1a99-df32aecb81c0
 md"""# Flexible Apocalyptic Numbers (arbitrary base)
@@ -25,22 +25,45 @@ Main question is if matches for XXX (i.e., the same digit, repeated) are also le
 # ╔═╡ bf7b118f-f21b-4c7f-9088-fcc29971cf90
 md"## Core parameters"
 
+# ╔═╡ 92d68527-5f6e-46fc-9928-9113dcd02a2c
+md"""Using the `limit-search.jl` script, empirically one finds that rough limits for non-apocalyptic 3-digit numbers by base for $2^n$ and $3^n$ are:
+
+| Base | Non-apocalyptic $2^n$ | $3^n$ | Apocalypse |
+|------|-----------------------|-------|------------|
+| 3    | 329                   | -     | 222        |
+| 5    | 1943                  | 1739  | 444        |
+| 7    | 9019                  | 4030  | 666        |
+| 10   | 29784                 | 16892 | 666        |
+| 11   | 39017                 | 29834 | 666        |
+| 13   | 79236                 | 57326 | 666        |
+| 17   | 222510                | 139834 | 666       |
+
+N.B. As this search is only done on one match sequence it will be higher for some other matches, so probably one should add a saftey factor of ~10%
+
+"""
+
 # ╔═╡ 507073e1-07bc-468a-bcbe-4ba3f1a992f7
+# Core parameters for the notebook
 begin
-	base = 5
+	# The power used to generate the number sequence ($power^n$)
+	power = 3
+
+	# The base used when generating the numerical representation
+	base = 13
+	# The length of sequence to be matched
 	seq_length = 3
+
+	# The starting and finishing n's to scan over
+	start_n = 1
+	finish_n = 70_000
 end
 
 # ╔═╡ e32bfd06-5dfb-4b0e-99cd-689e6a993cda
-# Now calculate all valid sequence matches for this base
-seq_matches = [Base.GMP.string(BigInt(i-1), base=base, pad=seq_length) 
-	for i in 1:base^seq_length]
-
-# ╔═╡ 9b254574-442c-4bb2-b404-08552b6d0f7c
-# Start and stop n
 begin
-	start_n = 1
-	finish_n = 10_000
+	# Now calculate all valid sequence matches for this base
+	seq_matches = [Base.GMP.string(BigInt(i-1), base=base, pad=seq_length) 
+		for i in 1:base^seq_length]
+	md"Will match against $(length(seq_matches)) sequences"
 end
 
 # ╔═╡ b88ec48b-4660-42cc-80d8-3374ec8db5c9
@@ -58,12 +81,6 @@ begin
 	end
 end
 
-# ╔═╡ 2eabe61a-b5c9-4699-b04f-d1e8914c333b
-# ╠═╡ disabled = true
-#=╠═╡
-string_sequence
-  ╠═╡ =#
-
 # ╔═╡ 814e6c72-5169-4fbe-a37b-5b0f0caacc09
 md"Now count the number of 'apocalyptic' matches for each 3 digit sequence"
 
@@ -75,11 +92,16 @@ begin
 			occursin(seq, power_string) && (n_apocalypse[seq_n] += 1)
 		end
 	end
+	a_avg = Int(round(mean(n_apocalypse)))
+	a_std = std(n_apocalypse)
+	md"""
+	Average apocalypse match $a_avg, standard deviation $a_std
+	"""
 end
 	
 
-# ╔═╡ 7fb5c685-ee58-426b-9a6e-68ff160d5f63
-n_apocalypse
+# ╔═╡ 9f00de55-6fba-479b-8c16-631ff940d8f9
+n_apocalypse .-= a_avg
 
 # ╔═╡ 67e9efc1-0460-46eb-8d19-9fb527edde94
 # Calculate reasonable values for the x-ticks, which are the XXX
@@ -92,31 +114,41 @@ end
 
 
 # ╔═╡ 28b29acb-9a48-473b-95b3-438814cf63d2
-plot(1:length(seq_matches), n_apocalypse, 
+apocalypse_dist = plot(1:length(seq_matches), n_apocalypse, 
 	xlabel="Sequence of $(seq_length) digits", 
-	ylabel="Number of 'apocalypse' matches", 
-	title="Apocalyptic Matches for Base $base",
+	ylabel="Apocalypse matches - mean ($a_avg)", 
+	title="Apocalyptic Matches for " * L"%$(power)^n" * ", base $base",
 	label="", xticks=(xticks_n, xlabels))
 
+# ╔═╡ dd97540a-3347-4158-bce4-6f9f30e996a3
+savefig(apocalypse_dist, joinpath("plots", 
+	"apocalyptic-matches-power-$(power)-base-$(base).png"))
+
 # ╔═╡ b2560af5-c899-4dac-a7ee-34719532394d
+# Pick out sequences which are outliers, beyond a few
+# standard deviations
 for (seq_n, seq) in enumerate(seq_matches)
-	if n_apocalypse[seq_n] < 9665
+	if n_apocalypse[seq_n] < -3 * a_std
 		println("$seq: $(n_apocalypse[seq_n])")
 	end
 end
 
 # ╔═╡ 659f1c63-c607-4de3-a78f-a8e53b0b3002
-histogram(n_apocalypse, xlabel="Number of 'apocalypse' matches", ylabel="Frequency", label="")
+apocalypse_hist = histogram(n_apocalypse, xlabel="Apocalypse matches (normalised)", ylabel="Frequency", label="")
+
+# ╔═╡ 479b508b-2d33-4d45-962e-75f009986913
+savefig(apocalypse_hist, joinpath("plots", 
+	"apocalyptic-histogram-power-$(power)-base-$(base).png"))
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
-OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
+LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
-OffsetArrays = "~1.13.0"
+LaTeXStrings = "~1.3.1"
 Plots = "~1.40.3"
 """
 
@@ -126,7 +158,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.10.2"
 manifest_format = "2.0"
-project_hash = "47019b50975aee67a92001585e8db43fd5486c0f"
+project_hash = "f3f8ecf47e0bb851a4983358a5cb412071ac543c"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -592,17 +624,6 @@ version = "1.0.2"
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
 version = "1.2.0"
-
-[[deps.OffsetArrays]]
-git-tree-sha1 = "6a731f2b5c03157418a20c12195eb4b74c8f8621"
-uuid = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
-version = "1.13.0"
-
-    [deps.OffsetArrays.extensions]
-    OffsetArraysAdaptExt = "Adapt"
-
-    [deps.OffsetArrays.weakdeps]
-    Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 
 [[deps.Ogg_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1187,21 +1208,22 @@ version = "1.4.1+1"
 # ╔═╡ Cell order:
 # ╟─3d3bf99c-f682-11ee-1a99-df32aecb81c0
 # ╠═18bb3c2b-ea25-4e35-b48d-e1372303b76e
-# ╠═7e3fb6ad-fcde-4c10-a45f-43191a120ed7
+# ╠═4df705e4-af59-48a1-a91a-afe02aa542e8
 # ╠═61a283f7-375b-4094-b3c8-e4acf5b2f4c3
 # ╟─bf7b118f-f21b-4c7f-9088-fcc29971cf90
+# ╟─92d68527-5f6e-46fc-9928-9113dcd02a2c
 # ╠═507073e1-07bc-468a-bcbe-4ba3f1a992f7
 # ╠═e32bfd06-5dfb-4b0e-99cd-689e6a993cda
-# ╠═9b254574-442c-4bb2-b404-08552b6d0f7c
 # ╟─b88ec48b-4660-42cc-80d8-3374ec8db5c9
 # ╠═585755a4-1634-4302-a561-dfc52f3e1f82
-# ╠═2eabe61a-b5c9-4699-b04f-d1e8914c333b
 # ╟─814e6c72-5169-4fbe-a37b-5b0f0caacc09
 # ╠═99267830-873e-4c8e-8291-6f8fb5ef3b5a
-# ╠═7fb5c685-ee58-426b-9a6e-68ff160d5f63
+# ╠═9f00de55-6fba-479b-8c16-631ff940d8f9
 # ╠═67e9efc1-0460-46eb-8d19-9fb527edde94
 # ╠═28b29acb-9a48-473b-95b3-438814cf63d2
+# ╠═dd97540a-3347-4158-bce4-6f9f30e996a3
 # ╠═b2560af5-c899-4dac-a7ee-34719532394d
 # ╠═659f1c63-c607-4de3-a78f-a8e53b0b3002
+# ╠═479b508b-2d33-4d45-962e-75f009986913
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

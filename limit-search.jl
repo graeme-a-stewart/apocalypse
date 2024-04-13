@@ -13,11 +13,11 @@ using ArgParse
 using Logging
 using Plots
 
-function search_limit(;stop = 10000, start = 1, base = 10, sequence = "666")
+function search_limit(;stop=10000, start=1, base=10, power=2, sequence="666")
     apocalypse_n = Int[]
     println("Searching for limit for \"$sequence\", will stop after $stop hits")
     n = start
-    i = big"2"^n
+    i = BigInt(power)^n
     apocalypse_count = 0
     n_non_apocalypse = 0
     last_non_apocalypse = n
@@ -26,7 +26,7 @@ function search_limit(;stop = 10000, start = 1, base = 10, sequence = "666")
             @info "Reached $n - $n_non_apocalypse in last chunk"
             n_non_apocalypse = 0
         end
-        digit_string = string(i)
+        digit_string = Base.GMP.string(i, base=base)
         if occursin(sequence, digit_string)
             apocalypse_count += 1
             @debug "$n is apocalypse ($apocalypse_count consecutive)"
@@ -38,7 +38,7 @@ function search_limit(;stop = 10000, start = 1, base = 10, sequence = "666")
             n_non_apocalypse += 1
         end
         n += 1
-        i *= 2
+        i *= power
     end
     println("Searched to n=$n, last non-apocalypse n was n=$last_non_apocalypse")
     apocalypse_n
@@ -78,6 +78,16 @@ parse_command_line(args) = begin
         arg_type = Int
         default = 1
 
+        "--base"
+        help = "Number base in which to express the result"
+        arg_type = Int
+        default = 10
+
+        "--power"
+        help = "Power to use for generating numbers (power^n)"
+        arg_type = Int
+        default = 2
+
         "--plot"
         help = "Save plot of apocalyptic density"
 
@@ -85,11 +95,6 @@ parse_command_line(args) = begin
         help = "Width of bins for histogram plot"
         arg_type = Int
         default = 0
-
-        "--base"
-        help = "Number base to work in NOT YET IMPLEMENTED"
-        arg_type = Int
-        default = 10
 
 		"--info"
 		help = "Print info level log messages"
@@ -113,7 +118,7 @@ function main()
 	end
 
     stats = @timed begin
-        apocalypse_n = search_limit(stop = args[:stop], start = args[:start], base = args[:base], sequence = args[:sequence])
+        apocalypse_n = search_limit(stop = args[:stop], start = args[:start], base = args[:base], power = args[:power], sequence = args[:sequence])
     end
 
     if !isnothing(args[:plot])
