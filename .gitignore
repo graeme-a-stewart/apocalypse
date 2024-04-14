@@ -26,5 +26,8 @@ Manifest.toml
 # Editor files
 .vscode/*
 
-# Plots files are not stored in git
-plots/*
+# Results files (cached outputs and plots) are not stored in git
+results/*
+
+# Misc files
+.DS_Store
