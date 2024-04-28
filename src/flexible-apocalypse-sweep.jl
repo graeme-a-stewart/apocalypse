@@ -54,6 +54,9 @@ function flexible_apocalypse_search(; power = 2, base = 10, seq_len = 3, start =
     seq_matches = [Base.GMP.string(BigInt(i - 1), base = base, pad = seq_len)
                    for i in 1:base^seq_len]
 
+    # Store last n searched
+    last_n = stop
+
     if isnothing(safety)
         # This is the logic when we know the end point of the search
         # Now calculate and cache all string sequences corresponding to the range
@@ -94,8 +97,9 @@ function flexible_apocalypse_search(; power = 2, base = 10, seq_len = 3, start =
             print("\r$(spinner[n%length(spinner)+1]) $n $non_apocalypse_count/$(length(seq_matches)) $(n-last_non_apocalypse_n)")
         end
         println("\nLast non-matching power was $last_non_apocalypse_n")
+        last_n = n
     end
-    seq_matches, n_nonapocalypse
+    seq_matches, n_nonapocalypse, last_n
 end
 
 parse_command_line(args) = begin
@@ -157,8 +161,12 @@ function main()
     stop = args[:stop]
     safety = args[:safety]
 
+    if !isnothing(stop) && !isnothing(safety)
+        @warn "Both stop value and safety value given - safety value takes precedence"
+    end
+
     stats = @timed begin
-        seq_matches, n_nonapocalypse = flexible_apocalypse_search(power=power, base=base,
+        seq_matches, n_nonapocalypse, last_n = flexible_apocalypse_search(power=power, base=base,
             seq_len = seq_len, start = start, stop = stop, safety=safety)
     end
     @info "Search took $(stats.time)s"
@@ -178,7 +186,7 @@ function main()
 
     # Numerical results
     open(joinpath("results",
-            "n-non-apocalypse-b$(base)-p$(power)-l$(seq_len)-n$(start)_$(stop).json"), "w") do io
+            "n-non-apocalypse-base-$(base)-power-$(power)-seq-$(seq_len)-n$(start)-$(last_n).json"), "w") do io
         JSON.print(io, n_nonapocalypse, 2)
     end
 
@@ -191,7 +199,7 @@ function main()
     	title="Non-Apocalyptic Matches for " * L"%$(power)^n" * ", base $base",
 	    label="", xticks=(xticks_n, xlabels))
     savefig(non_apocalypse_dist, joinpath("results", 
-        "non-apocalyptic-matches-base-$(base)-power-$(power).pdf"))
+        "non-apocalyptic-matches-base-$(base)-power-$(power)-seq-$(seq_len)-n$(start)-$(last_n).pdf"))
 
 end
 
