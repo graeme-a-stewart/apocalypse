@@ -18,6 +18,9 @@
 #
 # N.B. As this search is only done on one match sequence it will be higher for 
 # some other matches, so probably one should add a safety factor of ~10%
+#
+# This is obsoleted by the use of the "--safety" option, that continues
+# the search until there are no more non-apocalypse matches found
 
 using ArgParse
 using JSON
@@ -78,6 +81,17 @@ function flexible_apocalypse_search(; power = 2, base = 10, seq_len = 3, start =
         end
     else
         # This is the logic when the end point is unknown
+
+        # Optimised search strategy, instead of matching each string against
+        # the digit sequence (which scales badly as the base and the sequence
+        # length increase), create a map from the sequence match strings, and
+        # sweep only once through the digit sequence, marking off matches
+        # as we go
+        match_counts = Dict{String, Int}()
+        for seq in seq_matches
+            match_counts[seq] = 0
+        end
+        # Start of search sequence        
         n_nonapocalypse = zeros(Int, length(seq_matches))
         last_non_apocalypse_n = 0
         n = start-1
@@ -87,11 +101,22 @@ function flexible_apocalypse_search(; power = 2, base = 10, seq_len = 3, start =
             n += 1
             i_str = Base.GMP.string(i, base = base)
             non_apocalypse_count = 0
+            # March over the string and check off matches
+            for j in 1:(length(i_str)-(seq_len-1))
+                m_str = SubString(i_str, j, j+(seq_len-1))
+                if haskey(match_counts, m_str)
+                    match_counts[m_str] += 1
+                end
+            end
+            # Now check the matches
             for (seq_n, seq) in enumerate(seq_matches)
-                if !occursin(seq, i_str)
+                if match_counts[seq] == 0
                     n_nonapocalypse[seq_n] += 1
                     non_apocalypse_count += 1
                     last_non_apocalypse_n = n
+                else
+                    # Reset for next iteration
+                    match_counts[seq] = 0
                 end
             end
             print("\r$(spinner[n%length(spinner)+1]) $n $non_apocalypse_count/$(length(seq_matches)) $(n-last_non_apocalypse_n)")
@@ -186,7 +211,7 @@ function main()
 
     # Numerical results
     open(joinpath("results",
-            "n-non-apocalypse-base-$(base)-power-$(power)-seq-$(seq_len)-n$(start)-$(last_n).json"), "w") do io
+            "n-non-apocalypse-v2-base-$(base)-power-$(power)-seq-$(seq_len)-n$(start)-$(last_n).json"), "w") do io
         JSON.print(io, n_nonapocalypse, 2)
     end
 
@@ -199,7 +224,7 @@ function main()
     	title="Non-Apocalyptic Matches for " * L"%$(power)^n" * ", base $base",
 	    label="", xticks=(xticks_n, xlabels))
     savefig(non_apocalypse_dist, joinpath("results", 
-        "non-apocalyptic-matches-base-$(base)-power-$(power)-seq-$(seq_len)-n$(start)-$(last_n).pdf"))
+        "non-apocalyptic-matches-v2-base-$(base)-power-$(power)-seq-$(seq_len)-n$(start)-$(last_n).pdf"))
 
 end
 
