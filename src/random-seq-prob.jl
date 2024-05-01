@@ -5,6 +5,7 @@
 #
 
 using ArgParse
+using JSON
 using LaTeXStrings
 using Logging
 using Plots
@@ -14,22 +15,30 @@ using ProgressBars
 Calculate the one-shot probabilty of a match for sequence of length n
 in a random number of l digits
 """
-function l_prob(;n=3, l=3)
+function l_prob(; n = 3, l = 3)
     if l < n
         return 1.0
     end
-    (1.0 - 10.0^(-n))^(l-n+1)
+    (1.0 - 10.0^(-n))^(l - n + 1)
 end
 
 """
 Fill a vector with the probability at each l value
 """
-function probability_seq(;n=3, stop=3)
+function probability_seq(; n = 3, stop = 3)
     prob_seq = Vector{Float64}()
+    final_l = stop
     for l ∈ ProgressBar(1:stop)
-        push!(prob_seq, l_prob(n=n, l=l))
+        p = l_prob(n = n, l = l)
+        if p < eps(Float64)
+            # There's just no point in going further than machine precision...
+            @info "Abort at l=$(l), reached machine precision for cummulative calculation"
+            final_l = l
+            break
+        end
+        push!(prob_seq, l_prob(n = n, l = l))
     end
-    prob_seq
+    prob_seq, final_l
 end
 
 """
@@ -41,7 +50,7 @@ function cummulative_prob_seq(prob_seq)
     L = length(prob_seq)
     for l ∈ ProgressBar(1:L)
         cumm_prob_seq[l] = 0.0
-        for i = reverse(1:l)
+        for i ∈ reverse(1:l)
             cumm_prob_seq[l] += prob_seq[i]
         end
     end
@@ -62,7 +71,7 @@ function parse_command_line(args)
         default = 10
 
         "--stop"
-        help = "Stop after numbers of this number of digits have been checked"
+        help = "Stop after numbers of this number of digits have been checked (will abort after machine precision)"
         arg_type = Int
         default = 10_000
 
@@ -86,18 +95,24 @@ function main()
         logger = ConsoleLogger(stdout, Logging.Warn)
     end
 
-    prob_seq = probability_seq(n=args[:seq_length], stop=args[:stop])
+    prob_seq, final_l = probability_seq(n = args[:seq_length], stop = args[:stop])
     cumm_seq = cummulative_prob_seq(prob_seq)
 
-    println("Final probability for l=$(args[:stop]) is $(prob_seq[end])")
-    println("Final cummulative probability for l=$(args[:stop]) is $(cumm_seq[end])")
+    println("Final probability for l=$(final_l) is $(prob_seq[end])")
+    println("Final cummulative probability for l=$(final_l) is $(cumm_seq[end])")
 
-    ps_plot = plot(prob_seq, yaxis=:log, title="Non-match probability for base $(args[:base])",
-    xlabel="Digit length", ylabel=L"$p$", label="")
+    # Numerical results
+    open(joinpath("results",
+        "prob-seq-base-$(args[:base])-seq-$(args[:seq_length]).json"), write=true) do io
+        JSON.print(io, prob_seq, 2)
+    end
+
+    ps_plot = plot(prob_seq, yaxis = :log, title = "Non-match probability for base $(args[:base])",
+        xlabel = "Digit length", ylabel = L"$p$", label = "")
     savefig(ps_plot, joinpath("results", "prob-seq-base-$(args[:base])-seq-$(args[:seq_length]).pdf"))
-    cs_plot = plot(cumm_seq, 
-    title="Calculated number of sequence $(args[:seq_length])\nnon-matches for base $(args[:base])",
-    xlabel="Digit length", ylabel="Cummulative non-matches", label="")
+    cs_plot = plot(cumm_seq,
+        title = "Calculated number of sequence $(args[:seq_length])\nnon-matches for base $(args[:base])",
+        xlabel = "Digit length", ylabel = "Cummulative non-matches", label = "")
     savefig(cs_plot, joinpath("results", "cumm-non-matches-base-$(args[:base])-seq-$(args[:seq_length]).pdf"))
 end
 
