@@ -4,6 +4,7 @@
 # against a random digit sequence
 #
 
+using AccurateArithmetic
 using ArgParse
 using JSON
 using LaTeXStrings
@@ -15,44 +16,41 @@ using ProgressBars
 Calculate the one-shot probabilty of a match for sequence of length n
 in a random number of l digits
 """
-function l_prob(; n = 3, l = 3)
+function l_prob(; n = 3, l = 3, base = 10)
     if l < n
         return 1.0
     end
-    (1.0 - 10.0^(-n))^(l - n + 1)
+    (1.0 - float(base)^(-n))^(l - n + 1)
 end
 
 """
 Fill a vector with the probability at each l value
 """
-function probability_seq(; n = 3, stop = 3)
+function probability_seq(; n = 3, stop = 3, base = 10)
     prob_seq = Vector{Float64}()
     final_l = stop
     for l ∈ ProgressBar(1:stop)
-        p = l_prob(n = n, l = l)
+        p = l_prob(n = n, l = l, base = base)
+        push!(prob_seq, p)
         if p < eps(Float64)
             # There's just no point in going further than machine precision...
             @info "Abort at l=$(l), reached machine precision for cummulative calculation"
             final_l = l
             break
         end
-        push!(prob_seq, l_prob(n = n, l = l))
     end
     prob_seq, final_l
 end
 
 """
 Calculate the cummulative probability from 1:l, ensuring accurate summation
-(here as the function is monotonic decreasing, this means sum in reverse)
+using the AccurateArithmetic package
 """
 function cummulative_prob_seq(prob_seq)
-    cumm_prob_seq = similar(prob_seq)
     L = length(prob_seq)
+    cumm_prob_seq = zeros(Float64, L)
     for l ∈ ProgressBar(1:L)
-        cumm_prob_seq[l] = 0.0
-        for i ∈ reverse(1:l)
-            cumm_prob_seq[l] += prob_seq[i]
-        end
+        cumm_prob_seq[l] = sum_oro(prob_seq[1:l])
     end
     cumm_prob_seq
 end
@@ -95,8 +93,11 @@ function main()
         logger = ConsoleLogger(stdout, Logging.Warn)
     end
 
-    prob_seq, final_l = probability_seq(n = args[:seq_length], stop = args[:stop])
-    cumm_seq = cummulative_prob_seq(prob_seq)
+    prob_seq, final_l = probability_seq(n = args[:seq_length], stop = args[:stop], base = args[:base])
+    stats = @timed begin
+        cumm_seq = cummulative_prob_seq(prob_seq)
+    end
+    @info "Cummulative non-match calculation took $(stats.time)s"
 
     println("Final probability for l=$(final_l) is $(prob_seq[end])")
     println("Final cummulative probability for l=$(final_l) is $(cumm_seq[end])")
