@@ -5,6 +5,7 @@
 #
 
 using ArgParse
+using LaTeXStrings
 using Logging
 using Plots
 using ProgressBars
@@ -88,13 +89,16 @@ function main()
     prob_seq = probability_seq(n=args[:seq_length], stop=args[:stop])
     cumm_seq = cummulative_prob_seq(prob_seq)
 
-    println("Final probability for l=args[:stop] is $(prob_seq[end])")
-    println("Final cummulative probability for l=args[:stop] is $(cumm_seq[end])")
+    println("Final probability for l=$(args[:stop]) is $(prob_seq[end])")
+    println("Final cummulative probability for l=$(args[:stop]) is $(cumm_seq[end])")
 
-    ps_plot = plot(prob_seq, yaxis=:log)
-    savefig(ps_plot, joinpath("prob-seq.pdf"))
-    cs_plot = plot(cumm_seq)
-    savefig(cs_plot, "cum-prob-seq.pdf")
+    ps_plot = plot(prob_seq, yaxis=:log, title="Non-match probability for base $(args[:base])",
+    xlabel="Digit length", ylabel=L"$p$", label="")
+    savefig(ps_plot, joinpath("results", "prob-seq-base-$(args[:base])-seq-$(args[:seq_length]).pdf"))
+    cs_plot = plot(cumm_seq, 
+    title="Calculated number of sequence $(args[:seq_length])\nnon-matches for base $(args[:base])",
+    xlabel="Digit length", ylabel="Cummulative non-matches", label="")
+    savefig(cs_plot, joinpath("results", "cumm-non-matches-base-$(args[:base])-seq-$(args[:seq_length]).pdf"))
 end
 
 main()
