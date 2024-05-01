@@ -10,6 +10,7 @@ using JSON
 using LaTeXStrings
 using Logging
 using Plots
+using Printf
 using ProgressBars
 
 """
@@ -112,9 +113,11 @@ function main()
         xlabel = "Digit length", ylabel = L"$p$", label = "")
     savefig(ps_plot, joinpath("results", "prob-seq-base-$(args[:base])-seq-$(args[:seq_length]).pdf"))
     cs_plot = plot(cumm_seq,
-        title = "Calculated number of sequence $(args[:seq_length])\nnon-matches for base $(args[:base])",
-        xlabel = "Digit length", ylabel = "Cummulative non-matches", label = "")
-    savefig(cs_plot, joinpath("results", "cumm-non-matches-base-$(args[:base])-seq-$(args[:seq_length]).pdf"))
+        title = "Expected number of sequence $(args[:seq_length])\nnon-matches for base $(args[:base])",
+        xlabel = "Digit length", 
+        ylabel = "Cummulative non-matches\n(Max $(@sprintf "%.2f" cumm_seq[end]))", 
+        label = "")
+    savefig(cs_plot, joinpath("results", "cumm-prob-non-matches-base-$(args[:base])-seq-$(args[:seq_length]).pdf"))
 end
 
 main()
