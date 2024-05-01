@@ -19,8 +19,19 @@
 # N.B. As this search is only done on one match sequence it will be higher for 
 # some other matches, so probably one should add a safety factor of ~10%
 #
-# This is obsoleted by the use of the "--safety" option, that continues
+# ⬆ This is obsoleted by the use of the "--safety" option, that continues
 # the search until there are no more non-apocalypse matches found
+#
+# So it is recorded, the new search algorithm (ec939b7fbe083b386eaaab8fa2e9898d8dbb1654) 
+# is very much faster than the old
+#
+# | Search for sequence length 4             |
+# | Base | Old search | New search | Speedup |
+# |------|-------------------------|---------|
+# | 5    | 22         | 13         | x1.7    |
+# | 7    | 988        | 221        | x4.5    |
+# | 10   | 70771      | 5172       | x13.7   |
+#
 
 using ArgParse
 using JSON
@@ -119,7 +130,7 @@ function flexible_apocalypse_search(; power = 2, base = 10, seq_len = 3, start =
                     match_counts[seq] = 0
                 end
             end
-            print("\r$(spinner[n%length(spinner)+1]) $n $non_apocalypse_count/$(length(seq_matches)) $(n-last_non_apocalypse_n)")
+            print("\r$(spinner[n%length(spinner)+1]) $n $non_apocalypse_count/$(length(seq_matches)) $(n-last_non_apocalypse_n)    ")
         end
         println("\nLast non-matching power was $last_non_apocalypse_n")
         last_n = n
