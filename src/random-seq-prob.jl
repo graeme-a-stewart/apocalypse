@@ -3,6 +3,8 @@
 # Calculate the cummulative probability of matches for any sequence
 # against a random digit sequence
 #
+# Note that this problem can be solved analytically, see the
+# misc/random-numbers.ipynb notebook
 
 using AccurateArithmetic
 using ArgParse
