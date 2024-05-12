@@ -24,7 +24,7 @@ Plot number of non-matching numbers for sequences using cached JSON data
 """
 
 # ╔═╡ 450fc7bb-0be8-4d4d-aa78-6a9b434041f9
-json_input = joinpath("..", "results", 
+json_input = joinpath("..", "results",
 	"n-non-apocalypse-v3-base-10-power-2-seq-5.json")
 
 # ╔═╡ e925fdf6-dac4-4723-bca2-b9013d94af7f
@@ -62,12 +62,33 @@ na_std = std(results)
 # ╔═╡ b326a937-5acc-4d55-8cd9-ed04e6acb617
 norm_results = results .- na_avg
 
+# ╔═╡ 38f6fd60-8435-40c8-9660-862281e57498
+std_devs_plot = 4
+
+# ╔═╡ a54c8964-fbf0-4404-bfe4-546db1314ff4
+sdpv = std_devs_plot * na_std
+
 # ╔═╡ 50e71019-68bf-48ae-9e03-030c8ffd9894
-plot(1:length(seq_matches), norm_results,
-        xlabel = "Sequence of $(seq_len) digits",
-        ylabel = "Non-Apocalypse matches - mean ($na_avg)",
-        title = "Non-Apocalyptic Matches for " * L"%$(power)^n" * ", base $base",
-        label = "", xticks = (xticks_n, xlabels))
+begin
+	plt = plot(1:length(seq_matches), norm_results,
+	        xlabel = "Sequence of $(seq_len) digits",
+	        ylabel = "Non-Apocalypse matches - mean ($na_avg)",
+	        title = "Non-Apocalyptic Matches for " * L"%$(power)^n" * ", base $base",
+	        label = "", xticks = (xticks_n, xlabels))
+	plot!([1, length(seq_matches), NaN, 1, length(seq_matches)], 
+		[sdpv, sdpv, NaN, -sdpv, -sdpv], 
+		label=L"%$(std_devs_plot)\sigma", legend=:topright)
+	savefig(plt, joinpath("..", "results",
+        "non-apocalyptic-matches-v2-base-$(base)-power-$(power)-seq-$(seq_len).png"))
+	plt
+end
+
+# ╔═╡ 4ff02157-7940-4ed3-bcfb-f27fb8495391
+for (seq_n, seq) in enumerate(seq_matches)
+    if abs(norm_results[seq_n]) > std_devs_plot * na_std
+        println(" $seq: $(norm_results[seq_n])")
+    end
+end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1151,6 +1172,9 @@ version = "1.4.1+1"
 # ╠═a7c09f87-310a-4009-820a-287b91c37e22
 # ╠═8ef96915-bbd0-42f2-b2cb-c8d3ed9b39d4
 # ╠═b326a937-5acc-4d55-8cd9-ed04e6acb617
+# ╠═38f6fd60-8435-40c8-9660-862281e57498
+# ╠═a54c8964-fbf0-4404-bfe4-546db1314ff4
 # ╠═50e71019-68bf-48ae-9e03-030c8ffd9894
+# ╠═4ff02157-7940-4ed3-bcfb-f27fb8495391
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
