@@ -44,6 +44,15 @@ P_str = Base.GMP.string(P)
 seq_matches = [Base.GMP.string(BigInt(i - 1), base = 10, pad = 3)
                    for i in 1:10^3]
 
+# ╔═╡ 33498c90-bd84-4abb-be92-2e074f2b8169
+xticks_n = Int.(collect(range(1, length(seq_matches), 10)))
+
+# ╔═╡ 614ded94-fc04-4066-9a3f-8d1605870c2f
+xlabels = [seq_matches[i] for i in xticks_n]
+
+# ╔═╡ 497aef9e-d0de-4d6c-8053-9b9512688cca
+plot(n_nonapocalypse, title="Non-matches for P=N*M", ylabel="Non-matches", xlabel="Sequence", label="", xticks=(xticks_n, xlabels))
+
 # ╔═╡ e2ccdfd6-d8f1-4bee-8431-c4191f36b5bf
 begin
 	n_nonapocalypse = fill!(similar(seq_matches, Int), 0)
@@ -53,12 +62,13 @@ begin
         match_counts[seq] = 0
     end
 	mn_min = big"1"
-	mn_max = big"10"^250
+	mn_max = big"10"^500
 	for i in 1:100_000
-		N = rand(mrng, mn_min:mn_max)
-		M = rand(mrng, mn_min:mn_max)
-		P = N*M
-		P_str = Base.GMP.string(P, pad=200)
+		#N = rand(mrng, mn_min:mn_max)
+		#M = rand(mrng, mn_min:mn_max)
+		#P = N*M
+		P = rand(mrng, mn_min:mn_max)
+		P_str = Base.GMP.string(P)
 		for j in 1:(length(P_str)-2)
             m_str = SubString(P_str, j, j+2)
             if haskey(match_counts, m_str)
@@ -76,14 +86,41 @@ begin
 	end
 end
 
-# ╔═╡ 33498c90-bd84-4abb-be92-2e074f2b8169
-xticks_n = Int.(collect(range(1, length(seq_matches), 10)))
-
-# ╔═╡ 614ded94-fc04-4066-9a3f-8d1605870c2f
-xlabels = [seq_matches[i] for i in xticks_n]
-
-# ╔═╡ 497aef9e-d0de-4d6c-8053-9b9512688cca
-plot(n_nonapocalypse, title="Non-matches for P=N*M", ylabel="Non-matches", xlabel="Sequence", label="", xticks=(xticks_n, xlabels))
+# ╔═╡ 2d596927-c36d-4f6b-84c8-b48529de0867
+# ╠═╡ disabled = true
+#=╠═╡
+begin
+	n_nonapocalypse = fill!(similar(seq_matches, Int), 0)
+	match_counts = Dict{String, Int}()
+	mrng = MersenneTwister(123456)
+    for seq in seq_matches
+        match_counts[seq] = 0
+    end
+	mn_min = big"1"
+	mn_max = big"10"^250
+	for i in 1:100_000
+		N = rand(mrng, mn_min:mn_max)
+		M = rand(mrng, mn_min:mn_max)
+		P = N*M
+		# P = rand(mrng, mn_min:mn_max)
+		P_str = Base.GMP.string(P)
+		for j in 1:(length(P_str)-2)
+            m_str = SubString(P_str, j, j+2)
+            if haskey(match_counts, m_str)
+                match_counts[m_str] += 1
+            end
+        end
+		for (seq_n, seq) in enumerate(seq_matches)
+			if match_counts[seq] == 0
+				n_nonapocalypse[seq_n] += 1
+			else
+				# Reset for next iteration
+				match_counts[seq] = 0
+			end
+		end
+	end
+end
+  ╠═╡ =#
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1164,5 +1201,6 @@ version = "1.4.1+1"
 # ╠═33498c90-bd84-4abb-be92-2e074f2b8169
 # ╠═614ded94-fc04-4066-9a3f-8d1605870c2f
 # ╠═497aef9e-d0de-4d6c-8053-9b9512688cca
+# ╠═2d596927-c36d-4f6b-84c8-b48529de0867
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
