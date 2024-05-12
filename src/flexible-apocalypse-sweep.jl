@@ -60,16 +60,43 @@ function get_digit_sequences(; power = 2, base = 10, start = 1, stop = 35_000)
 end
 
 """
+Save results to a JSON file
+
+This function saves the results of a search to a JSON file, which can be
+used to continue searches at later, or to plot results.
+
+The JSON object stores some metadata as well as the list of non-apocalyptic
+matches for each sequence.
+"""
+function save_search_results(results; power, base, seq_len, start, stop, filename = nothing)
+    if isnothing(filename)
+        filename = joinpath("results",
+            "n-non-apocalypse-v3-base-$(base)-power-$(power)-seq-$(seq_len).json")
+    end
+    @info "Saving results to $filename at n=$stop (total non-apocalypse matches: $(sum(results)))"
+    results = Dict("power" => power, "base" => base, "seq_len" => seq_len,
+        "start" => start, "stop" => stop, "results" => results)
+    open(filename, "w") do io
+        JSON.print(io, results, 2)
+    end
+end
+
+"""
 Flexible apocalypse search master function
 """
 function flexible_apocalypse_search(; power = 2, base = 10, seq_len = 3, start = 1, stop = 35_000,
-    safety = nothing)
+    safety = nothing, save = 0)
     # Calculate all valid match strings for this base
     seq_matches = [Base.GMP.string(BigInt(i - 1), base = base, pad = seq_len)
                    for i in 1:base^seq_len]
 
     # Store last n searched
     last_n = stop
+
+    # If we are doing period saves, record the current time
+    if save != 0
+        last_save = time()
+    end
 
     if isnothing(safety)
         # This is the logic when we know the end point of the search
@@ -105,7 +132,7 @@ function flexible_apocalypse_search(; power = 2, base = 10, seq_len = 3, start =
         # Start of search sequence        
         n_nonapocalypse = zeros(Int, length(seq_matches))
         last_non_apocalypse_n = 0
-        n = start-1
+        n = start - 1
         i = BigInt(power)^n
         while (n - last_non_apocalypse_n < safety)
             i *= power
@@ -114,7 +141,7 @@ function flexible_apocalypse_search(; power = 2, base = 10, seq_len = 3, start =
             non_apocalypse_count = 0
             # March over the string and check off matches
             for j in 1:(length(i_str)-(seq_len-1))
-                m_str = SubString(i_str, j, j+(seq_len-1))
+                m_str = SubString(i_str, j, j + (seq_len - 1))
                 if haskey(match_counts, m_str)
                     match_counts[m_str] += 1
                 end
@@ -131,6 +158,11 @@ function flexible_apocalypse_search(; power = 2, base = 10, seq_len = 3, start =
                 end
             end
             print("\r$(spinner[n%length(spinner)+1]) $n $non_apocalypse_count/$(length(seq_matches)) $(n-last_non_apocalypse_n)    ")
+            # See if we want to save results
+            if save != 0 && time() - last_save > 60 * save
+                last_save = time()
+                save_search_results(n_nonapocalypse, power = power, base = base, seq_len = seq_len, start = start, stop = n)
+            end
         end
         println("\nLast non-matching power was $last_non_apocalypse_n")
         last_n = n
@@ -164,6 +196,11 @@ parse_command_line(args) = begin
         help = "Instead of the --stop option, halt after this many numbers have been checked and every match has been found"
         arg_type = Int
 
+        "--save"
+        help = "Save intermediate results every N minutes (set to 0 to disable)"
+        arg_type = Int
+        default = 60
+
         "--seq-length"
         help = "Sequence length to search for"
         arg_type = Int
@@ -196,14 +233,15 @@ function main()
     start = args[:start]
     stop = args[:stop]
     safety = args[:safety]
+    save = args[:save]
 
     if !isnothing(stop) && !isnothing(safety)
         @warn "Both stop value and safety value given - safety value takes precedence"
     end
 
     stats = @timed begin
-        seq_matches, n_nonapocalypse, last_n = flexible_apocalypse_search(power=power, base=base,
-            seq_len = seq_len, start = start, stop = stop, safety=safety)
+        seq_matches, n_nonapocalypse, last_n = flexible_apocalypse_search(power = power, base = base,
+            seq_len = seq_len, start = start, stop = stop, safety = safety, save = save)
     end
     @info "Search took $(stats.time)s"
 
@@ -221,20 +259,17 @@ function main()
     end
 
     # Numerical results
-    open(joinpath("results",
-            "n-non-apocalypse-v2-base-$(base)-power-$(power)-seq-$(seq_len)-n$(start)-$(last_n).json"), "w") do io
-        JSON.print(io, n_nonapocalypse, 2)
-    end
+    save_search_results(n_nonapocalypse, power = power, base = base, seq_len = seq_len, start = start, stop = last_n)
 
     # Plot of deviations from the non-apocalypse average
     xticks_n = Int.(collect(range(1, length(seq_matches), base)))
     xlabels = [seq_matches[i] for i in xticks_n]
-    non_apocalypse_dist = plot(1:length(seq_matches), norm_n_nonapocalypse, 
-    	xlabel="Sequence of $(seq_len) digits", 
-	    ylabel="Non-Apocalypse matches - mean ($na_avg)", 
-    	title="Non-Apocalyptic Matches for " * L"%$(power)^n" * ", base $base",
-	    label="", xticks=(xticks_n, xlabels))
-    savefig(non_apocalypse_dist, joinpath("results", 
+    non_apocalypse_dist = plot(1:length(seq_matches), norm_n_nonapocalypse,
+        xlabel = "Sequence of $(seq_len) digits",
+        ylabel = "Non-Apocalypse matches - mean ($na_avg)",
+        title = "Non-Apocalyptic Matches for " * L"%$(power)^n" * ", base $base",
+        label = "", xticks = (xticks_n, xlabels))
+    savefig(non_apocalypse_dist, joinpath("results",
         "non-apocalyptic-matches-v2-base-$(base)-power-$(power)-seq-$(seq_len)-n$(start)-$(last_n).pdf"))
 
 end
