@@ -83,6 +83,11 @@ begin
 	plt
 end
 
+# ╔═╡ 6efb5362-100c-4329-8e39-37bc66a7b16a
+md"## Outliers
+Print all values outside $(std_devs_plot)σ"
+
+
 # ╔═╡ 4ff02157-7940-4ed3-bcfb-f27fb8495391
 for (seq_n, seq) in enumerate(seq_matches)
     if abs(norm_results[seq_n]) > std_devs_plot * na_std
@@ -1175,6 +1180,7 @@ version = "1.4.1+1"
 # ╠═38f6fd60-8435-40c8-9660-862281e57498
 # ╠═a54c8964-fbf0-4404-bfe4-546db1314ff4
 # ╠═50e71019-68bf-48ae-9e03-030c8ffd9894
+# ╠═6efb5362-100c-4329-8e39-37bc66a7b16a
 # ╠═4ff02157-7940-4ed3-bcfb-f27fb8495391
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
