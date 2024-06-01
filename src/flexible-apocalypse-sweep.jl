@@ -43,21 +43,7 @@ using Statistics
 
 const spinner = ['|', '/', '-', '\\']
 
-"""
-Calculate the BigInt and equivalent String sequences for
-p^n, where n∈[start, stop]
-"""
-function get_digit_sequences(; power = 2, base = 10, start = 1, stop = 35_000)
-    seq = BigInt[]
-    str_seq = String[]
-    i = BigInt(power)^(start - 1)
-    for _ in start:stop
-        i *= power
-        push!(seq, i)
-        push!(str_seq, Base.GMP.string(i, base = base))
-    end
-    seq, str_seq
-end
+const default_safety = 1000
 
 """
 Save results to a JSON file
@@ -82,91 +68,85 @@ function save_search_results(results; power, base, seq_len, start, stop, filenam
 end
 
 """
+Load status of the search from a JSON file
+"""
+function load_search_results(filename)
+    @info "Loading results from $filename"
+    open(filename, "r") do io
+        return JSON.parse(io)
+    end
+end
+
+"""
 Flexible apocalypse search master function
 """
-function flexible_apocalypse_search(; power = 2, base = 10, seq_len = 3, start = 1, stop = 35_000,
-    safety = nothing, save = 0)
+function flexible_apocalypse_search(; power = 2, base = 10, seq_len = 3, start = 1, stop = nothing,
+    safety = default_safety, save = 0, n_nonapocalypse = nothing)
     # Calculate all valid match strings for this base
     seq_matches = [Base.GMP.string(BigInt(i - 1), base = base, pad = seq_len)
                    for i in 1:base^seq_len]
 
-    # Store last n searched
-    last_n = stop
-
-    # If we are doing period saves, record the current time
+    # If we are doing periodic saves, record the current time
     if save != 0
         last_save = time()
     end
 
-    if isnothing(safety)
-        # This is the logic when we know the end point of the search
-        # Now calculate and cache all string sequences corresponding to the range
-        stats = @timed begin
-            num_vals, num_strs = get_digit_sequences(power = power, base = base, start = start, stop = stop)
-        end
-        @info "Found power sequence in $(stats.time)s"
-
-        # Loop over each sequence match and each string
-        n_nonapocalypse = zeros(Int, length(seq_matches))
-        for num_str in ProgressBar(num_strs)
-            for (seq_n, seq) in enumerate(seq_matches)
-                # Actually we count non-matching numbers
-                # This is better as these will converge to a given value, so this is then
-                # ultimately insensitive to the stopping value of n (i.e., above some large
-                # value of n, all sequences should be present in all numbers)
-                occursin(seq, num_str) || (n_nonapocalypse[seq_n] += 1)
-            end
-        end
-    else
-        # This is the logic when the end point is unknown
-
-        # Optimised search strategy, instead of matching each string against
-        # the digit sequence (which scales badly as the base and the sequence
-        # length increase), create a map from the sequence match strings, and
-        # sweep only once through the digit sequence, marking off matches
-        # as we go
-        match_counts = Dict{String, Int}()
-        for seq in seq_matches
-            match_counts[seq] = 0
-        end
-        # Start of search sequence        
-        n_nonapocalypse = zeros(Int, length(seq_matches))
-        last_non_apocalypse_n = 0
-        n = start - 1
-        i = BigInt(power)^n
-        while (n - last_non_apocalypse_n < safety)
-            i *= power
-            n += 1
-            i_str = Base.GMP.string(i, base = base)
-            non_apocalypse_count = 0
-            # March over the string and check off matches
-            for j in 1:(length(i_str)-(seq_len-1))
-                m_str = SubString(i_str, j, j + (seq_len - 1))
-                if haskey(match_counts, m_str)
-                    match_counts[m_str] += 1
-                end
-            end
-            # Now check the matches
-            for (seq_n, seq) in enumerate(seq_matches)
-                if match_counts[seq] == 0
-                    n_nonapocalypse[seq_n] += 1
-                    non_apocalypse_count += 1
-                    last_non_apocalypse_n = n
-                else
-                    # Reset for next iteration
-                    match_counts[seq] = 0
-                end
-            end
-            print("\r$(spinner[n%length(spinner)+1]) $n $non_apocalypse_count/$(length(seq_matches)) $(n-last_non_apocalypse_n)    ")
-            # See if we want to save results
-            if save != 0 && time() - last_save > 60 * save
-                last_save = time()
-                save_search_results(n_nonapocalypse, power = power, base = base, seq_len = seq_len, start = start, stop = n)
-            end
-        end
-        println("\nLast non-matching power was $last_non_apocalypse_n")
-        last_n = n
+    # Optimised search strategy, instead of matching each string against
+    # the digit sequence (which scales badly as the base and the sequence
+    # length increase), create a map from the sequence match strings, and
+    # sweep only once through the digit sequence, marking off matches
+    # as we go
+    match_counts = Dict{String, Int}()
+    for seq in seq_matches
+        match_counts[seq] = 0
     end
+    # Start of search sequence
+    if isnothing(n_nonapocalypse)
+        n_nonapocalypse = zeros(Int, length(seq_matches))
+        n = start - 1
+        last_non_apocalypse_n = 0
+    else
+        # When we restart from a saved file, we already have the n_nonapocalypse
+        # and we start the search from stop+1 (but set to stop here as the value
+        # of n is incremented at the start of the loop below)
+        n = stop
+        last_non_apocalypse_n = stop
+    end   
+    i = BigInt(power)^n
+    last_n = n
+    while (n - last_non_apocalypse_n < safety)
+        i *= power
+        n += 1
+        i_str = Base.GMP.string(i, base = base)
+        non_apocalypse_count = 0
+        # March over the string and check off matches
+        for j in 1:(length(i_str)-(seq_len-1))
+            m_str = SubString(i_str, j, j + (seq_len - 1))
+            if haskey(match_counts, m_str)
+                match_counts[m_str] += 1
+            end
+        end
+        # Now check the matches
+        for (seq_n, seq) in enumerate(seq_matches)
+            if match_counts[seq] == 0
+                n_nonapocalypse[seq_n] += 1
+                non_apocalypse_count += 1
+                last_non_apocalypse_n = n
+            else
+                # Reset for next iteration
+                match_counts[seq] = 0
+            end
+        end
+        print("\r$(spinner[n%length(spinner)+1]) $n $non_apocalypse_count/$(length(seq_matches)) $(n-last_non_apocalypse_n)    ")
+        # See if we want to save results
+        if save != 0 && time() - last_save > 60 * save
+            last_save = time()
+            save_search_results(n_nonapocalypse, power = power, base = base, seq_len = seq_len, start = start, stop = n)
+        end
+    end
+    println("\nLast non-matching power was $last_non_apocalypse_n")
+    last_n = n
+
     seq_matches, n_nonapocalypse, last_n
 end
 
@@ -188,23 +168,23 @@ parse_command_line(args) = begin
         arg_type = Int
         default = 1
 
-        "--stop"
-        help = "Value of n where p^n is the final power searched"
-        arg_type = Int
-
         "--safety"
-        help = "Instead of the --stop option, halt after this many numbers have been checked and every match has been found"
+        help = "Halt after this many numbers have been checked and every match has been found"
         arg_type = Int
+        default = 1000
 
         "--save"
         help = "Save intermediate results every N minutes (set to 0 to disable)"
         arg_type = Int
-        default = 60
+        default = 10
 
         "--seq-length"
         help = "Sequence length to search for"
         arg_type = Int
         default = 3
+
+        "--restart"
+        help = "Restart scan from saved JSON file"
 
         "--info"
         help = "Print info level log messages"
@@ -227,21 +207,30 @@ function main()
         logger = ConsoleLogger(stdout, Logging.Warn)
     end
 
-    power = args[:power]
-    base = args[:base]
-    seq_len = args[:seq_length]
-    start = args[:start]
-    stop = args[:stop]
-    safety = args[:safety]
-    save = args[:save]
-
-    if !isnothing(stop) && !isnothing(safety)
-        @warn "Both stop value and safety value given - safety value takes precedence"
+    if !isnothing(args[:restart])
+        status = load_search_results(args[:restart])
+        power = status["power"]
+        base = status["base"]
+        seq_len = status["seq_len"]
+        start = status["start"]
+        stop = status["stop"]
+        n_nonapocalypse = status["results"]
+        safety = isnothing(args[:safety]) ? args[:safety] : default_safety
+        save = args[:save]
+    else
+        power = args[:power]
+        base = args[:base]
+        seq_len = args[:seq_length]
+        start = args[:start]
+        stop = nothing
+        safety = args[:safety]
+        save = args[:save]
+        n_nonapocalypse = nothing
     end
 
     stats = @timed begin
         seq_matches, n_nonapocalypse, last_n = flexible_apocalypse_search(power = power, base = base,
-            seq_len = seq_len, start = start, stop = stop, safety = safety, save = save)
+            seq_len = seq_len, start = start, stop = stop, safety = safety, save = save, n_nonapocalypse = n_nonapocalypse)
     end
     @info "Search took $(stats.time)s"
 
