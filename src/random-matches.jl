@@ -27,7 +27,7 @@ function save_search_results(results; base, seq_len, number_length, start, stop,
         filename = joinpath("results",
             "n-non-match-v4-base-$(base)-length-$(number_length)-seq-$(seq_len).json")
     end
-    @info "Saving results to $filename at n=$stop (total non-matches: $(sum(results))) at $(string(DateTime(now())))"
+    @info "Saving results to $filename at n=$stop (total non-matches: $(sum(results))) at $(string(DateTime(now())))\n"
     results = Dict("power" => 0, "base" => base, "seq_len" => seq_len,
         "start" => start, "stop" => stop, "results" => results, "length" => number_length,
         "format" => "v4", "method" => "random")

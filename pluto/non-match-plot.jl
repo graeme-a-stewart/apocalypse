@@ -25,7 +25,7 @@ Plot number of non-matching numbers for sequences using cached JSON data
 
 # ╔═╡ 450fc7bb-0be8-4d4d-aa78-6a9b434041f9
 json_input = joinpath("..", "results",
-	"n-non-match-v4-base-10-length-200-seq-4.json")
+	"n-non-match-v4-base-10-length-200-seq-5.json")
 
 # ╔═╡ e925fdf6-dac4-4723-bca2-b9013d94af7f
 nm_res = JSON.parsefile(json_input)
