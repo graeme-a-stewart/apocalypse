@@ -1,0 +1,4 @@
+# Ignore graphical outputs
+*.pdf
+*.png
+*.mp4
