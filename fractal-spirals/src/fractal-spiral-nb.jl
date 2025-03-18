@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.3
+# v0.20.4
 
 using Markdown
 using InteractiveUtils
@@ -16,8 +16,8 @@ md"# Fractal Spirals
 These are curves formed from the iterative sequence:
 
 1. Start at $(x, y) = (0, 0)$ with $n=0$ and $\theta = 0$
-2. Calculate the angle $\theta_n = \theta_{n-1} + 2\pi s n$, where $s$ is irrational (i.e., each iteration increases the rotation by an additional $2\pi s$)
-3. Move along the vector $(\cos \theta_n, sin \theta_n)$
+2. Calculate the angle $\theta_n = \theta_{n-1} + 2\pi s n$, where $s$ is irrational (i.e., each iteration increases the rotation by an *additional* $2\pi s$)
+3. Move along the vector $(\cos \theta_n, \sin \theta_n)$
 4. Add 1 to $n$ and go back to step 2
 
 These are described in Chapter 21, *The Fractal Golden Curlicue is Cool*.
@@ -56,7 +56,7 @@ end
 end
 
 # ╔═╡ 7a176029-82e7-47dd-b538-56ae9fe281b5
-for p in spiral(ℯ, 10)
+for p in spiral(ℯ, 12)
 	println(p)
 end
 
@@ -85,19 +85,19 @@ function plot_spiral(s::Real, n_max::Int)
 end
 
 # ╔═╡ 1c1254fe-45f9-456b-a30e-e1bb3f27e4fc
-plot_spiral(ℯ, 10000)
+plot_spiral(ℯ, 50_000)
 
 # ╔═╡ beb341d1-7c32-4809-971a-209719b38f07
-plot_spiral(π, 10000)
+plot_spiral(π, 250_000)
 
 # ╔═╡ ade06988-4102-47b6-aaa3-c4cce2ee5e5f
-plot_spiral(MathConstants.golden, 10000)
+plot_spiral(MathConstants.golden, 50_000)
 
 # ╔═╡ 6fb2b7e1-91ef-46eb-b8a0-a6e9ab65f219
-plot_spiral(MathConstants.catalan, 10000)
+plot_spiral(MathConstants.catalan, 50_000)
 
 # ╔═╡ 14106cc0-2916-4896-bc74-cf0a1c752e0a
-plot_spiral(MathConstants.eulergamma, 10000)
+plot_spiral(MathConstants.eulergamma, 50_000)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -107,16 +107,16 @@ ResumableFunctions = "c5292f4c-5179-55e1-98c5-05642aab7184"
 
 [compat]
 PlutoPlotly = "~0.6.2"
-ResumableFunctions = "~1.0.1"
+ResumableFunctions = "~1.0.2"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.11.3"
+julia_version = "1.11.4"
 manifest_format = "2.0"
-project_hash = "e7caa2dacaee37df3dc958207374c82faa798c63"
+project_hash = "ac22f819d616fbf71de3aa2c808472d0c805ad91"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -138,9 +138,9 @@ version = "1.11.0"
 
 [[deps.ColorSchemes]]
 deps = ["ColorTypes", "ColorVectorSpace", "Colors", "FixedPointNumbers", "PrecompileTools", "Random"]
-git-tree-sha1 = "26ec26c98ae1453c692efded2b17e15125a5bea1"
+git-tree-sha1 = "403f2d8e209681fcbd9468a8514efff3ea08452e"
 uuid = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
-version = "3.28.0"
+version = "3.29.0"
 
 [[deps.ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
@@ -380,15 +380,15 @@ version = "1.2.2"
 
 [[deps.Requires]]
 deps = ["UUIDs"]
-git-tree-sha1 = "838a3a4188e2ded87a4f9f184b4b0d78a1e91cb7"
+git-tree-sha1 = "62389eeff14780bfe55195b7204c0d8738436d64"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
-version = "1.3.0"
+version = "1.3.1"
 
 [[deps.ResumableFunctions]]
 deps = ["Logging", "MacroTools"]
-git-tree-sha1 = "4d6533a2cac3a79b7ecf2222503139993370404c"
+git-tree-sha1 = "a806de0d1f85cfc291317b01fb96a6674ff4c267"
 uuid = "c5292f4c-5179-55e1-98c5-05642aab7184"
-version = "1.0.1"
+version = "1.0.2"
 
 [[deps.SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
@@ -396,9 +396,9 @@ version = "0.7.0"
 
 [[deps.ScopedValues]]
 deps = ["HashArrayMappedTries", "Logging"]
-git-tree-sha1 = "eef2fbac9538ee6cc60ee1489f028d2f8a1a5249"
+git-tree-sha1 = "1147f140b4c8ddab224c94efa9569fc23d63ab44"
 uuid = "7e506255-f358-4e82-b7e4-beb19740aa63"
-version = "1.2.1"
+version = "1.3.0"
 
 [[deps.Scratch]]
 deps = ["Dates"]
@@ -443,9 +443,9 @@ uuid = "62fd8b95-f654-4bbd-a8a5-9c27f68ccd50"
 version = "0.1.1"
 
 [[deps.Tricks]]
-git-tree-sha1 = "7822b97e99a1672bfb1b49b668a6d46d58d8cbcb"
+git-tree-sha1 = "6cae795a5a9313bbb4f60683f7263318fc7d1505"
 uuid = "410a4b4d-49e4-4fbc-ab6d-cb71b17b3775"
-version = "0.1.9"
+version = "0.1.10"
 
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]

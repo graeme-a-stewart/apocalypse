@@ -24,14 +24,22 @@ using ResumableFunctions
 	end
 end
 
-"""Plot the fractal spiral"""
-function plot_spiral(s, nmax, output)
+"""Obtain the spiral in a pair of x,y vectors"""
+function spiral_xy(s::Real, nmax::Int)
     xv = [0.0]
 	yv = [0.0]
+    sizehint!(xv, nmax+1)
+    sizehint!(yv, nmax+1)
 	for (x, y) in spiral(s, nmax)
 		push!(xv, x)
 		push!(yv, y)
 	end
+    xv, yv
+end
+
+"""Plot the fractal spiral"""
+function plot_spiral(s, nmax, output)
+    xv, yv = spiral_xy(s, nmax)
 
     fig = Figure()
     ax = Axis(fig[1, 1]; 
@@ -45,8 +53,21 @@ end
 
 """Animate the fractal spiral"""
 function animate_spiral(s, nmax, output)
-    # First just make a simple 2D plot
-    
+    xv, yv = spiral_xy(s, nmax)
+    # println(xv, yv)
+
+    it_obs = Observable(1)
+    xv_n = @lift @view xv[1:$it_obs+1]
+    yv_n = @lift @view yv[1:$it_obs+1]
+    println(typeof(xv_n), typeof(yv_n))
+
+    ax = (title = "Fractal Sprial for s=$(s), $nmax interations",
+            xlabel = "x", 
+            ylabel = "y")
+    fig = lines(xv_n, yv_n; axis=ax)
+    record(fig, output, 1:nmax; framerate = 100) do iteration
+        it_obs[] = min(iteration, nmax)
+    end
 end
 
 function main()
@@ -62,8 +83,8 @@ function main()
         arg_type = Int
         default = 10000
 
-        "--plot", "-p"
-        help = "Make plot instead of animation"
+        "--animate", "-a"
+        help = "Make animation instead of animation"
         action = :store_true
 
         "output"
@@ -81,10 +102,10 @@ function main()
         s = parse(Float64, args[:constant])
     end
 
-    if args[:plot]
-        plot_spiral(s, args[:nmax], args[:output])
-    else
+    if args[:animate]
         animate_spiral(s, args[:nmax], args[:output])
+    else
+        plot_spiral(s, args[:nmax], args[:output])
     end
 end
 
