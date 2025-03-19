@@ -56,17 +56,15 @@ function animate_spiral(s, nmax, output)
     xv, yv = spiral_xy(s, nmax)
     # println(xv, yv)
 
-    it_obs = Observable(1)
-    xv_n = @lift @view xv[1:$it_obs+1]
-    yv_n = @lift @view yv[1:$it_obs+1]
-    println(typeof(xv_n), typeof(yv_n))
+    points = Observable(Point2f[(0.0, 0.0)])
 
-    ax = (title = "Fractal Sprial for s=$(s), $nmax interations",
+    ax = (title = "Fractal Spiral for s=$(s), $nmax interations",
             xlabel = "x", 
-            ylabel = "y")
-    fig = lines(xv_n, yv_n; axis=ax)
+            ylabel = "y",
+            limits = (extrema(xv)..., extrema(yv)...))
+    fig = lines(points; axis=ax)
     record(fig, output, 1:nmax; framerate = 100) do iteration
-        it_obs[] = min(iteration, nmax)
+        points[] = push!(points[], Point2f(xv[iteration], yv[iteration]))
     end
 end
 
@@ -81,7 +79,7 @@ function main()
         "--nmax", "-n"
         help = "Number of interations"
         arg_type = Int
-        default = 10000
+        default = 1000
 
         "--animate", "-a"
         help = "Make animation instead of animation"
