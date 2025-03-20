@@ -12,79 +12,110 @@ using ResumableFunctions
 
 # ╔═╡ 7e8465d2-92f5-4e1a-a589-61950ade3355
 begin
-	points = Observable(Point2f[(0, 0)])
-	
-	fig, ax = lines(points)
-	scatter!(points)
+    points = Observable(Point2f[(0, 0)])
 
-	limits!(ax, 0, 30, 0, 30)
+    fig, ax = lines(points)
+    scatter!(points)
 
-	frames = 1:30
+    limits!(ax, 0, 30, 0, 30)
 
-	record(fig, "append_animation.mp4", frames;
-        framerate = 10) do frame
-    	new_point = Point2f(frame, frame)
-    	points[] = push!(points[], new_point)
-	end
+    frames = 1:30
+
+    record(fig, "append_animation.mp4", frames; framerate = 10) do frame
+        new_point = Point2f(frame, frame)
+        points[] = push!(points[], new_point)
+    end
 end
 
 # ╔═╡ ba550ea6-b8bc-4385-be41-01f98c1bd295
 """Return the x, y *end point* coordinates of the next (nth) line segment"""
 @resumable function spiral(s::Real, nmax::Int)
-	x = 1.0
-	y = 0.0
-	angle = rotation_angle = 0.0
-	for _ in 1:nmax
-		@yield x, y
-		# To avoid round off error, we always keep angle in [0, 2π)
-		rotation_angle = rem(rotation_angle + 2π * s, 2π)
-		angle = rem(angle + rotation_angle, 2π)
-		x += cos(angle)
-		y += sin(angle)
-	end
+    x = 1.0
+    y = 0.0
+    angle = rotation_angle = 0.0
+    for _ = 1:nmax
+        @yield x, y
+        # To avoid round off error, we always keep angle in [0, 2π)
+        rotation_angle = rem(rotation_angle + 2π * s, 2π)
+        angle = rem(angle + rotation_angle, 2π)
+        x += cos(angle)
+        y += sin(angle)
+    end
 end
 
 # ╔═╡ b310b742-7c4c-4f1c-8806-6e33013c9594
 """Obtain the spiral as a vector of Point2f"""
 function spiral_points(s::Real, nmax::Int)
-	points = Point2f[(0.0, 0.0)]
-    sizehint!(points, nmax+1)
-	for (x, y) in spiral(s, nmax)
-		push!(points, Point2f(x, y))
-	end
+    points = Point2f[(0.0, 0.0)]
+    sizehint!(points, nmax + 1)
+    for (x, y) in spiral(s, nmax)
+        push!(points, Point2f(x, y))
+    end
     points
 end
 
 # ╔═╡ 69755289-c533-4410-bb45-8914ec06fc1e
 begin
-	s = ℯ
-	nmax = 5000
-	my_points = spiral_points(s, nmax)
+    s = ℯ
+    nmax = 5000
+    my_points = spiral_points(s, nmax)
 end
 
 # ╔═╡ e25ae467-0616-4e8d-80f4-1b5a92ffb7b6
 let
-	ax = (title = "Fractal Sprial for s=$s, $nmax interations",
-        	xlabel = "x", 
-            ylabel = "y")
-    fig = lines(my_points; axis=ax)
+    ax = (title = "Fractal Sprial for s=$s, $nmax interations", xlabel = "x", ylabel = "y")
+    fig = lines(my_points; axis = ax)
 end
 
 # ╔═╡ 9059ed53-fdc1-4343-b59c-49e93e4a375e
 let
-	points = Observable(Point2f[(0, 0)])
-	
-	fig, ax = lines(points)
-	# scatter!(points)
+    points = Observable(Point2f[(0, 0)])
 
-	limits!(ax, minimum(p[1] for p in my_points), maximum(p[1] for p in my_points), minimum(p[2] for p in my_points), maximum(p[2] for p in my_points))
+    fig, ax = lines(points)
+    # scatter!(points)
 
-	frames = 2:length(my_points)
+    limits!(
+        ax,
+        minimum(p[1] for p in my_points),
+        maximum(p[1] for p in my_points),
+        minimum(p[2] for p in my_points),
+        maximum(p[2] for p in my_points),
+    )
 
-	record(fig, "spiral_animation_euler.mp4", frames;
-        framerate = 200) do frame
-    	points[] = push!(points[], my_points[frame])
-	end
+    frames = 2:length(my_points)
+
+    record(fig, "spiral_animation_euler.mp4", frames; framerate = 200) do frame
+        points[] = push!(points[], my_points[frame])
+    end
+end
+
+# ╔═╡ 2ad5200b-bea5-4cd1-95cc-7094c394d02a
+let
+    points = Observable(Point2f[(0, 0)])
+
+    ax = (
+        title = "Fractal Spiral for s=$(s), $nmax interations",
+        xlabel = "x",
+        ylabel = "y",
+        limits = @lift (
+            minimum(p[1] for p in $points) - 1.0,
+            maximum(p[1] for p in $points) + 1.0,
+            minimum(p[2] for p in $points) - 1.0,
+            maximum(p[2] for p in $points) + 1.0,
+        )
+    )
+
+
+    fig = lines(points; axis = ax)
+    # scatter!(points)
+
+    # limits!(ax, minimum(p[1] for p in my_points), maximum(p[1] for p in my_points), minimum(p[2] for p in my_points), maximum(p[2] for p in my_points))
+
+    frames = 2:length(my_points)
+
+    record(fig, "spiral_animation_scale.mp4", frames; framerate = 200) do frame
+        points[] = push!(points[], my_points[frame])
+    end
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -1710,5 +1741,6 @@ version = "1.4.1+2"
 # ╠═69755289-c533-4410-bb45-8914ec06fc1e
 # ╠═e25ae467-0616-4e8d-80f4-1b5a92ffb7b6
 # ╠═9059ed53-fdc1-4343-b59c-49e93e4a375e
+# ╠═2ad5200b-bea5-4cd1-95cc-7094c394d02a
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

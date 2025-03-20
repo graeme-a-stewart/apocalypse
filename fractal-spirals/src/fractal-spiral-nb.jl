@@ -28,36 +28,36 @@ md"Resumable functions give really nice *generator* functions, akin to how they 
 
 # ╔═╡ 2365669c-32b7-4ad6-8593-4dfdfa5b6d42
 struct Pointn
-	x::Float64
-	y::Float64
-	n::Int
+    x::Float64
+    y::Float64
+    n::Int
 end
 
 # ╔═╡ d9d95ce1-c06c-4b88-aed1-090b05589d61
 begin
-	n_max = 1000
-	s = ℯ
+    n_max = 1000
+    s = ℯ
 end
 
 # ╔═╡ 2827750f-b221-4417-9435-479c4f47318c
 """Return the *end point* of the next (nth) line segment"""
-@resumable function spiral(s::Real, nmax::Int) :: Pointn
-	x = 1.0
-	y = 0.0
-	angle = rotation_angle = 0.0
-	for n in 1:nmax
-		@yield Pointn(x, y, n)
-		# To avoid round off error, we always keep angle in [0, 2π)
-		rotation_angle = rem(rotation_angle + 2π * s, 2π)
-		angle = rem(angle + rotation_angle, 2π)
-		x += cos(angle)
-		y += sin(angle)
-	end
+@resumable function spiral(s::Real, nmax::Int)::Pointn
+    x = 1.0
+    y = 0.0
+    angle = rotation_angle = 0.0
+    for n = 1:nmax
+        @yield Pointn(x, y, n)
+        # To avoid round off error, we always keep angle in [0, 2π)
+        rotation_angle = rem(rotation_angle + 2π * s, 2π)
+        angle = rem(angle + rotation_angle, 2π)
+        x += cos(angle)
+        y += sin(angle)
+    end
 end
 
 # ╔═╡ 7a176029-82e7-47dd-b538-56ae9fe281b5
 for p in spiral(ℯ, 12)
-	println(p)
+    println(p)
 end
 
 # ╔═╡ 584f7759-6f48-43e3-bd3a-482dc2cd80bf
@@ -73,15 +73,15 @@ md"Setup the plotly plotter"
 Plot the spiral fractal for `n_max` interations of the constant `s`
 """
 function plot_spiral(s::Real, n_max::Int)
-	xv = [0.0]
-	yv = [0.0]
-	for p in spiral(s, n_max)
-		push!(xv, p.x)
-		push!(yv, p.y)
-	end
-	spiral_plot = scatter(x=xv, y=yv, mode="lines")
-	layout = Layout(title="Fractal Spiral for $(String(Symbol(s))), $n_max steps")
-	plot(spiral_plot, layout)
+    xv = [0.0]
+    yv = [0.0]
+    for p in spiral(s, n_max)
+        push!(xv, p.x)
+        push!(yv, p.y)
+    end
+    spiral_plot = scatter(x = xv, y = yv, mode = "lines")
+    layout = Layout(title = "Fractal Spiral for $(String(Symbol(s))), $n_max steps")
+    plot(spiral_plot, layout)
 end
 
 # ╔═╡ 1c1254fe-45f9-456b-a30e-e1bb3f27e4fc
