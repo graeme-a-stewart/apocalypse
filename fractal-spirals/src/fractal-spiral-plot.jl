@@ -8,6 +8,7 @@ using ArgParse
 using CairoMakie
 using Colors
 using ResumableFunctions
+using ProgressBars
 
 """Return the x, y *end point* coordinates of the next (nth) line segment"""
 @resumable function spiral(s::Real, nmax::Int)
@@ -86,7 +87,7 @@ function animate_spiral(
         limits = limits,
     )
     fig = lines(points; axis = ax)
-    record(fig, output, 1:nmax; framerate = framerate) do iteration
+    record(fig, output, ProgressBar(1:nmax); framerate = framerate) do iteration
         points[] = push!(points[], Point2f(xv[iteration], yv[iteration]))
     end
 end
