@@ -86,7 +86,7 @@ function animate_spiral(
         limits = limits,
     )
     fig = lines(points; axis = ax)
-    record(fig, output, 1:nmax; framerate = 100) do iteration
+    record(fig, output, 1:nmax; framerate = framerate) do iteration
         points[] = push!(points[], Point2f(xv[iteration], yv[iteration]))
     end
 end
